@@ -162,6 +162,11 @@ function removeRolePermission(roleId, commandName) {
     return false;
 }
 
+function getOwners() {
+    const config = loadConfig();
+    return config.owners || [];
+}
+
 module.exports = {
     getPermissions,
     isOwner,
@@ -177,3 +182,4 @@ module.exports = {
     loadConfig,
     saveConfig
 };
+
