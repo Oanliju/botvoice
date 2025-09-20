@@ -170,6 +170,7 @@ function getOwners() {
 module.exports = {
     getPermissions,
     isOwner,
+    getOwners,
     isBuyer,
     hasPermission, // ✅ Remise de la fonction
     addOwner,
@@ -182,4 +183,5 @@ module.exports = {
     loadConfig,
     saveConfig
 };
+
 
