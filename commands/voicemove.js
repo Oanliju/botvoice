@@ -69,7 +69,7 @@ module.exports = {
             const successEmbed = new EmbedBuilder()
                 .setTitle('DÉPLACEMENT RÉUSSI')
                 .setDescription(`${targetUser.user.tag} a été déplacé dans ${targetChannel.name}`)
-                .setColor('#00FF00')
+                .setColor('#2F3136')
                 .setTimestamp();
                 
             await message.channel.send({ embeds: [successEmbed] });
@@ -79,4 +79,5 @@ module.exports = {
             return sendTempEmbed(message, "❌ Erreur lors du déplacement - Vérifiez les permissions", 3000);
         }
     }
+
 };
