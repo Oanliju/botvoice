@@ -6,7 +6,7 @@ const { EmbedBuilder } = require('discord.js');
 
 // Liste des commandes vocales qui doivent être loggées
 const voiceCommands = [
-    'voicemove', 'swap', 'laisse', 'wakeup',
+    'voicemove', 'swap', 'wakeup',
     'rolemove', 'voicekick', 'voicemute', 'voicedeaf'
 ];
 
@@ -84,3 +84,4 @@ module.exports = {
     loadCommands,
     commandHandler
 };
+
