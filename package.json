@@ -1,0 +1,28 @@
+{
+  "name": "discord-voice-moderation-bot",
+  "version": "1.0.0",
+  "description": "Un bot Discord pour la modération des salons vocaux",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js | pino-pretty -i pid,hostname -t 'yyyy-mm-dd HH:MM:ss'",
+    "lint": "eslint ."
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "voice",
+    "moderation"
+  ],
+  "author": "VotreNom",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "pino": "^8.21.1",
+    "pino-pretty": "^10.3.1"
+  }
+}
