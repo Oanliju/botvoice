@@ -22,7 +22,9 @@
   },
   "devDependencies": {
     "eslint": "^8.57.0",
-    "pino": "^8.21.1",
+    "pino": "^9.4.0",
     "pino-pretty": "^10.3.1"
   }
+
+
 }
