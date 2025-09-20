@@ -2,9 +2,10 @@ const { Client, GatewayIntentBits, Collection, ActivityType } = require('discord
 const { commandHandler, loadCommands } = require('./utils/commandHandler');
 const { loadConfig, saveConfig } = require('./utils/configmanager');
 const logger = require('./utils/logger');
-
 require('dotenv').config();
+const express = require('express'); // <-- Ajout pour Render
 
+// --- BOT DISCORD ---
 const client = new Client({ 
     intents: [
         GatewayIntentBits.Guilds,
@@ -25,10 +26,9 @@ loadCommands(client);
 const laisseCommand = require('./commands/laisse');
 laisseCommand.setupVoiceAutoJoin(client);
 
-
 client.once('ready', () => {
     logger.info(`✅ Connecté en tant que ${client.user.tag}`);
-    client.user.setActivity('=help', { type: ActivityType.Watching });
+    client.user.setActivity('=help | pourtoi', { type: ActivityType.Watching });
 });
 
 client.on('messageCreate', async (message) => {
@@ -44,3 +44,20 @@ client.on('messageCreate', async (message) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
+// --- SERVEUR EXPRESS POUR RENDER ---
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get("/", (req, res) => {
+    res.send("Bot is running!");
+});
+
+// endpoint health check (pour Render)
+app.get("/healthz", (req, res) => {
+    res.status(200).json({ status: "ok" });
+});
+
+app.listen(PORT, () => {
+    logger.info(`🌐 Serveur HTTP lancé sur le port ${PORT}`);
+});
