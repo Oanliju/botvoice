@@ -1,24 +1,15 @@
-const fs = require('fs');
-const path = require('path');
-const { hasPermission } = require('./permissions');
+const { isOwner, isBuyer } = require('./utils/permissions');
+const { EmbedBuilder } = require('discord.js');
 
-function loadCommands(client) {
-    const commandsPath = path.join(__dirname, '..', 'commands');
-    const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-    
-    for (const file of commandFiles) {
-        const filePath = path.join(commandsPath, file);
-        const command = require(filePath);
-        
-        if ('name' in command && 'execute' in command) {
-            client.commands.set(command.name, command);
-        } else {
-            console.log(`[AVERTISSEMENT] La commande ${file} n'a pas de propriété "name" ou "execute".`);
-        }
-    }
-}
+// Liste des commandes qui agissent sur les vocaux
+const voiceCommands = [
+    'voicemove', 'swap', 'laisse', 'wakeup', 
+    'rolemove', 'voicekick', 'voicemute', 'voicedeaf'
+];
 
-function commandHandler(client, message, commandName, args) {
+const logChannelId = '1419001461173518397';
+
+async function commandHandler(client, message, commandName, args) {
     let command = client.commands.get(commandName);
 
     // Vérifie les alias
@@ -26,21 +17,44 @@ function commandHandler(client, message, commandName, args) {
         command = client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
     }
 
-    if (!command) {
-        // Ne rien faire si la commande n'existe pas
-        return;
-    }
+    if (!command) return; // Commande inexistante
 
     try {
-        command.execute(client, message, args);
+        // Exécute la commande
+        // On suppose que chaque commande vocale retourne un objet logInfo si elle a fait une action
+        const logInfo = await command.execute(client, message, args);
+
+        // --- Logging embed pour les commandes vocales ---
+        if (
+            voiceCommands.includes(commandName) &&
+            !isOwner(message.author.id) &&
+            !isBuyer(message.author.id) &&
+            logInfo
+        ) {
+            const logChannel = await client.channels.fetch(logChannelId);
+            if (!logChannel) return;
+
+            const embed = new EmbedBuilder()
+                .setTitle(`📌 Commande vocale exécutée : ${commandName}`)
+                .setColor('#5865F2')
+                .setTimestamp()
+                .setFooter({ text: `ID: ${message.author.id}` })
+                .addFields(
+                    { name: 'Auteur', value: `${message.author.tag}`, inline: true },
+                    { name: 'Action', value: logInfo.action || 'N/A', inline: true },
+                    { name: 'Cible', value: logInfo.target || 'N/A', inline: true },
+                    { name: 'Salon source', value: logInfo.source || 'N/A', inline: true },
+                    { name: 'Salon destination', value: logInfo.destination || 'N/A', inline: true },
+                    { name: 'Raison / détails', value: logInfo.reason || 'Aucune' }
+                );
+
+            logChannel.send({ embeds: [embed] });
+        }
+
     } catch (error) {
         console.error(error);
         message.channel.send('Une erreur s\'est produite lors de l\'exécution de cette commande.');
     }
 }
 
-
-module.exports = {
-    loadCommands,
-    commandHandler
-};
+module.exports = { commandHandler };
