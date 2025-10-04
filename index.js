@@ -28,7 +28,7 @@ laisseCommand.setupVoiceAutoJoin(client);
 
 client.once('ready', () => {
     logger.info(`✅ Connecté en tant que ${client.user.tag}`);
-    client.user.setActivity('=help | pourtoi', { type: ActivityType.Watching });
+    client.user.setActivity('=help | oan', { type: ActivityType.Watching });
 });
 
 client.on('messageCreate', async (message) => {
@@ -61,3 +61,4 @@ app.get("/healthz", (req, res) => {
 app.listen(PORT, () => {
     logger.info(`🌐 Serveur HTTP lancé sur le port ${PORT}`);
 });
+
