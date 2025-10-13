@@ -25,10 +25,12 @@ module.exports = {
         // === Embeds utilitaires ===
         const generateMainEmbed = () => {
             const perms = permsUtils.getPermissions();
-            const usersPermsList = Object.entries(perms.commandPermissions)
+            const commandPermissions = perms.commandPermissions || {};
+            const rolePermissions = perms.rolePermissions || {};
+            const usersPermsList = Object.entries(commandPermissions)
                 .map(([id, cmds]) => `• <@${id}> : ${cmds.join(', ')}`).join('\n') || '*Aucun utilisateur*';
 
-            const rolesPermsList = Object.entries(perms.rolePermissions)
+            const rolesPermsList = Object.entries(rolePermissions)
                 .map(([id, cmds]) => `• <@&${id}> : ${cmds.join(', ')}`).join('\n') || '*Aucun rôle*';
 
             return new EmbedBuilder()
