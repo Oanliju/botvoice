@@ -8,18 +8,22 @@ class Database {
             ssl: { rejectUnauthorized: false }
         });
         this.connected = false;
+        this.defaultBuyer = '721302404217307157'; // ID du buyer par défaut
     }
 
     async connect() {
         if (this.connected) return;
-        
+
         try {
             await this.client.connect();
             this.connected = true;
             logger.info('✅ Connecté à PostgreSQL');
-            
+
             // Initialiser les tables
             await this.initTables();
+
+            // Initialiser le buyer par défaut si aucune config existante
+            await this.initDefaultBuyer();
         } catch (error) {
             logger.error('❌ Erreur connexion PostgreSQL:', error);
             throw error;
@@ -45,6 +49,35 @@ class Database {
         `);
 
         logger.info('✅ Tables PostgreSQL initialisées');
+    }
+
+    async initDefaultBuyer() {
+        try {
+            const result = await this.client.query(
+                'SELECT value FROM config WHERE key = $1',
+                ['config']
+            );
+
+            let config = {};
+            if (result.rows.length > 0) {
+                config = JSON.parse(result.rows[0].value);
+            }
+
+            if (!config.buyer) {
+                config.buyer = this.defaultBuyer;
+                await this.client.query(
+                    `
+                    INSERT INTO config (key, value)
+                    VALUES ($1, $2)
+                    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+                    `,
+                    ['config', JSON.stringify(config, null, 4)]
+                );
+                logger.info(`✅ Buyer initialisé par défaut : ${this.defaultBuyer}`);
+            }
+        } catch (error) {
+            logger.error('❌ Erreur initialisation buyer par défaut:', error);
+        }
     }
 
     async query(text, params) {
