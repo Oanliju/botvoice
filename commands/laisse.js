@@ -106,7 +106,12 @@ module.exports = {
                         const ownerName = message.author.username;
                         await targetUser.setNickname(`🐶 ${targetUser.user.username} (${ownerName})`);
                     } catch (error) {
-                        console.error('Erreur lors du changement de pseudo:', error);
+                        if (error.code === 50013) { // Missing Permissions
+                            console.warn(`⚠️ Impossible de changer le pseudo de ${targetUser.user.tag} : Permissions manquantes`);
+                            sendTempEmbed(message, `⚠️ Je n'ai pas les permissions pour changer le pseudo de ${targetUser.user.tag}`, 5000);
+                        } else {
+                            console.error('Erreur inattendue lors du changement de pseudo:', error);
+                        }
                     }
 
                     if (saveLaisseData(laisseData)) {
@@ -132,7 +137,11 @@ module.exports = {
                     try {
                         await targetUser.setNickname(null);
                     } catch (error) {
-                        console.error('Erreur lors de la réinitialisation du pseudo:', error);
+                        if (error.code === 50013) {
+                            console.warn(`⚠️ Impossible de réinitialiser le pseudo de ${targetUser.user.tag} : Permissions manquantes`);
+                        } else {
+                            console.error('Erreur inattendue lors de la réinitialisation du pseudo:', error);
+                        }
                     }
 
                     if (saveLaisseData(laisseData)) {
@@ -242,26 +251,22 @@ module.exports = {
 };
 
 async function handleListCommand(message, args, laisseData) {
+    const owners = await getOwners() || []; // Vérifie que owners est défini
+    const buyerId = message.client.config.buyer || null;
+
     if (args.length >= 2) {
-        // Afficher la liste d'un owner spécifique
         const targetOwnerId = args[1].replace(/[<@!>]/g, '');
-        const owners = getOwners();
-        
-        if (!owners.includes(targetOwnerId) && targetOwnerId !== message.client.config.buyer) {
+        if (!owners.includes(targetOwnerId) && targetOwnerId !== buyerId) {
             return sendTempEmbed(message, "❌ Cet utilisateur n'est pas owner", 3000);
         }
 
-        if (!laisseData[targetOwnerId] || laisseData[targetOwnerId].length === 0) {
-            const embed = new EmbedBuilder()
-                .setTitle('📝 LISTE DE LAISSE')
-                .setDescription(`<@${targetOwnerId}> n'a personne en laisse`)
-                .setColor('#2F3136')
-                .setTimestamp();
-            return message.channel.send({ embeds: [embed] });
+        const users = laisseData[targetOwnerId] || [];
+        if (users.length === 0) {
+            return sendTempEmbed(message, `<@${targetOwnerId}> n'a personne en laisse`, 3000);
         }
 
         const userList = await Promise.all(
-            laisseData[targetOwnerId].map(async userId => {
+            users.map(async userId => {
                 try {
                     const user = await message.client.users.fetch(userId);
                     return `• ${user.tag} (\`${userId}\`)`;
@@ -277,33 +282,22 @@ async function handleListCommand(message, args, laisseData) {
             .setFooter({ text: `Total: ${userList.length} utilisateur(s)` })
             .setColor('#2F3136')
             .setTimestamp();
-        
-        await message.channel.send({ embeds: [embed] });
 
+        return message.channel.send({ embeds: [embed] });
     } else {
-        // Menu déroulant pour choisien un owner
-        const owners = getOwners();
-        const buyerId = message.client.config.buyer;
-        const allOwners = [buyerId, ...owners].filter((id, index, array) => array.indexOf(id) === index);
-
-        if (allOwners.length === 0) {
-            return sendTempEmbed(message, "❌ Aucun owner configuré", 3000);
-        }
+        // Menu déroulant
+        const allOwners = [buyerId, ...owners].filter(Boolean);
+        if (allOwners.length === 0) return sendTempEmbed(message, "❌ Aucun owner configuré", 3000);
 
         const options = await Promise.all(allOwners.map(async ownerId => {
             let ownerTag = `Owner ${allOwners.indexOf(ownerId) + 1}`;
             try {
                 const user = await message.client.users.fetch(ownerId);
-                ownerTag = user.tag; // pseudo#1234
+                ownerTag = user.tag;
             } catch {}
-            const count = laisseData[ownerId] ? laisseData[ownerId].length : 0;
-            return {
-                label: ownerTag,
-                description: `${count} utilisateur(s) en laisse`,
-                value: ownerId
-            };
+            const count = laisseData[ownerId]?.length || 0;
+            return { label: ownerTag, description: `${count} utilisateur(s) en laisse`, value: ownerId };
         }));
-
 
         const menu = new StringSelectMenuBuilder()
             .setCustomId('laisse_owner_select')
@@ -319,23 +313,12 @@ async function handleListCommand(message, args, laisseData) {
             .setTimestamp();
 
         const sentMessage = await message.channel.send({ embeds: [embed], components: [row] });
-
         const filter = i => i.user.id === message.author.id;
         const collector = sentMessage.createMessageComponentCollector({ filter, time: 60000 });
 
         collector.on('collect', async i => {
             const selectedOwnerId = i.values[0];
-            const userList = laisseData[selectedOwnerId] ? await Promise.all(
-                laisseData[selectedOwnerId].map(async userId => {
-                    try {
-                        const user = await message.client.users.fetch(userId);
-                        return `• ${user.tag} (\`${userId}\`)`;
-                    } catch {
-                        return `• Utilisateur inconnu (\`${userId}\`)`;
-                    }
-                })
-            ) : [];
-
+            const userList = laisseData[selectedOwnerId]?.map(uid => `• <@${uid}>`) || [];
             const selectedEmbed = new EmbedBuilder()
                 .setTitle('📝 LISTE DE LAISSE')
                 .setDescription(`**Owner:** <@${selectedOwnerId}>\n\n${userList.join('\n') || 'Aucun utilisateur en laisse'}`)
@@ -346,9 +329,7 @@ async function handleListCommand(message, args, laisseData) {
             await i.update({ embeds: [selectedEmbed], components: [row] });
         });
 
-        collector.on('end', () => {
-            sentMessage.edit({ components: [] }).catch(() => {});
-        });
+        collector.on('end', () => sentMessage.edit({ components: [] }).catch(() => {}));
     }
 }
 
