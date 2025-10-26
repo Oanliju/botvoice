@@ -17,7 +17,7 @@ module.exports = {
     aliases: ['unmute', 'unvm'],
     description: 'Retire le mute vocal d\'un membre',
     async execute(client, message, args) {
-        if (!hasPermission(message.author, 'unvoicemute', message.guild)) {
+        if (!await hasPermission(message.author, 'unvoicemute', message.guild)) {
             return sendTempEmbed(message, "❌ Permission refusée", 3000);
         }
 

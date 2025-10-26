@@ -18,7 +18,7 @@ module.exports = {
     description: 'Change ou réinitialise la limite d\'un salon vocal',
     async execute(client, message, args) {
         // Vérification que seul le buyer peut utiliser cette commande
-        if (!isBuyer(message.author.id)) {
+        if (!await isBuyer(message.author.id)) {
             return sendTempEmbed(message, "❌ Commande réservée au buyer", 3000);
         }
 

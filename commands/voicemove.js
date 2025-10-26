@@ -17,7 +17,7 @@ module.exports = {
     aliases: ['mv'],
     description: 'Déplace un membre vers un salon vocal spécifié ou vers votre salon actuel',
     async execute(client, message, args) {
-        if (!hasPermission(message.author, 'voicemove', message.guild)) {
+        if (!await hasPermission(message.author, 'voicemove', message.guild)) {
             return sendTempEmbed(message, "❌ Permission refusée", 3000);
         }
 

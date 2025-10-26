@@ -16,7 +16,7 @@ module.exports = {
     name: 'swap',
     description: 'Échange deux membres entre leurs salons vocaux',
     async execute(client, message, args) {
-        if (!hasPermission(message.author, 'swap', message.guild)) {
+        if (!await hasPermission(message.author, 'swap', message.guild)) {
             return sendTempEmbed(message, "❌ Permission refusée", 3000);
         }
 

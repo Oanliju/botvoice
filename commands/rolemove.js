@@ -16,7 +16,7 @@ module.exports = {
     name: 'rolemove',
     description: 'Déplace tous les membres d’un rôle dans un salon vocal',
     async execute(client, message, args) {
-        if (!hasPermission(message.author, 'rolemove', message.guild)) {
+        if (!await hasPermission(message.author, 'rolemove', message.guild)) {
             return sendTempEmbed(message, "❌ Permission refusée", 3000);
         }
 

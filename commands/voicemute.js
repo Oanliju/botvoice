@@ -17,7 +17,7 @@ module.exports = {
     aliases: ['mute', 'vm'],
     description: 'Mute vocal un membre',
     async execute(client, message, args) {
-        if (!hasPermission(message.author, 'voicemute', message.guild)) {
+        if (!await hasPermission(message.author, 'voicemute', message.guild)) {
             return sendTempEmbed(message, "❌ Permission refusée", 3000);
         }
 

@@ -7,7 +7,7 @@ module.exports = {
     name: 'wakeup',
     description: 'Déplace un utilisateur plusieurs fois pour le réveiller',
     async execute(client, message, args) {
-        if (!hasPermission(message.author, 'wakeup', message.guild)) {
+        if (!await hasPermission(message.author, 'wakeup', message.guild)) {
             return message.channel.send({ embeds: [
                 new EmbedBuilder()
                     .setTitle('PERMISSION REFUSÉE')

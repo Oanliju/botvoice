@@ -16,7 +16,7 @@ module.exports = {
     name: 'find',
     description: 'Trouve un membre dans les salons vocaux',
     async execute(client, message, args) {
-        if (!hasPermission(message.author, 'find', message.guild)) {
+        if (!await hasPermission(message.author, 'find', message.guild)) {
             return sendTempEmbed(message, "❌ Permission refusée", 3000);
         }
 

@@ -16,7 +16,7 @@ module.exports = {
     name: 'bring',
     description: 'Déplace tous les membres d\'un salon vocal vers un autre salon',
     async execute(client, message, args) {
-        if (!hasPermission(message.author, 'bring', message.guild)) {
+        if (!await hasPermission(message.author, 'bring', message.guild)) {
             return sendTempEmbed(message, "❌ Permission refusée", 3000);
         }
 

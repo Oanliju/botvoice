@@ -19,7 +19,7 @@ module.exports = {
     aliases: ['vkick', 'vk'],
     description: 'Kick un membre de son salon vocal',
     async execute(client, message, args) {
-        if (!hasPermission(message.author, 'voicekick', message.guild)) {
+        if (!await hasPermission(message.author, 'voicekick', message.guild)) {
             return sendTempEmbed(message, "❌ Permission refusée", 3000);
         }
 

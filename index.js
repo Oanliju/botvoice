@@ -34,7 +34,7 @@ client.once('ready', async () => {
         client.config = await loadConfig();
 
         logger.info(`✅ Connecté en tant que ${client.user.tag}`);
-        client.user.setActivity('=help V2.3 | oan', { type: ActivityType.Watching });
+        client.user.setActivity('=help | oan', { type: ActivityType.Watching });
     } catch (err) {
         logger.error('❌ Erreur lors du chargement de la config :', err);
     }

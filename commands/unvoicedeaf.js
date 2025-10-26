@@ -18,7 +18,7 @@ module.exports = {
     aliases: ['undeaf', 'unvd'],
     description: 'Retire le mute casque d\'un membre',
     async execute(client, message, args) {
-        if (!hasPermission(message.author, 'unvoicedeaf', message.guild)) {
+        if (!await hasPermission(message.author, 'unvoicedeaf', message.guild)) {
             return sendTempEmbed(message, "❌ Permission refusée", 3000);
         }
 
