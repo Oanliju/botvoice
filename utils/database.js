@@ -8,6 +8,7 @@ class Database {
             logger.error('❌ DATABASE_URL non défini — impossible de démarrer sans base de données persistante.');
             throw new Error('DATABASE_URL not defined');
         }
+        
 
         this.client = new Client({
             connectionString: process.env.DATABASE_URL,
