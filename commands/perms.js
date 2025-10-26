@@ -12,7 +12,8 @@ module.exports = {
     name: 'perms',
     description: 'Gestion des permissions utilisateurs et rôles',
     async execute(client, message) {
-        if (!permsUtils.isOwner(message.author.id) && !permsUtils.isBuyer(message.author.id)) {
+        // 🔒 Vérification des permissions d’accès à la commande
+        if (!(await permsUtils.isOwner(message.author.id)) && !(await permsUtils.isBuyer(message.author.id))) {
             return message.channel.send({
                 embeds: [new EmbedBuilder()
                     .setColor('Red')
@@ -23,10 +24,11 @@ module.exports = {
         }
 
         // === Embeds utilitaires ===
-        const generateMainEmbed = () => {
-            const perms = permsUtils.getPermissions();
+        const generateMainEmbed = async () => {
+            const perms = await permsUtils.getPermissions();
             const commandPermissions = perms.commandPermissions || {};
             const rolePermissions = perms.rolePermissions || {};
+
             const usersPermsList = Object.entries(commandPermissions)
                 .map(([id, cmds]) => `• <@${id}> : ${cmds.join(', ')}`).join('\n') || '*Aucun utilisateur*';
 
@@ -58,7 +60,7 @@ module.exports = {
         const row = new ActionRowBuilder().addComponents(typeMenu);
 
         const sentMessage = await message.channel.send({
-            embeds: [generateMainEmbed()],
+            embeds: [await generateMainEmbed()],
             components: [row]
         });
 
@@ -72,7 +74,7 @@ module.exports = {
 
             if (i.customId === 'type') {
                 const type = i.values[0];
-                const prompt = await message.channel.send(`✍️ Mentionnez ${type === 'user' ? 'un utilisateur' : 'un rôle'} ou envoyez son ID :`);
+                const prompt = await message.channel.send(`Mentionnez ${type === 'user' ? 'un utilisateur' : 'un rôle'} ou envoyez son ID :`);
 
                 const collected = await message.channel.awaitMessages({
                     filter: m => m.author.id === message.author.id,
@@ -83,7 +85,7 @@ module.exports = {
                 await prompt.delete().catch(() => {});
 
                 if (collected.size === 0) {
-                    return message.channel.send('⏳ Temps écoulé, réessayez.');
+                    return message.channel.send('Temps écoulé, réessayez.');
                 }
 
                 const content = collected.first().content;
@@ -99,7 +101,7 @@ module.exports = {
 
                 // Fonction pour rafraîchir les menus et l'embed en temps réel
                 const refreshMenusAndEmbed = async () => {
-                    const perms = permsUtils.getPermissions();
+                    const perms = await permsUtils.getPermissions();
                     const updatedPerms = type === 'user'
                         ? perms.commandPermissions[id] || []
                         : perms.rolePermissions[id] || [];
@@ -135,7 +137,7 @@ module.exports = {
                     });
                 };
 
-                // Première génération des menus
+                // Première génération
                 await refreshMenusAndEmbed();
 
                 const subCollector = sentMessage.createMessageComponentCollector({
@@ -148,37 +150,38 @@ module.exports = {
 
                     if (btn.customId === 'back') {
                         subCollector.stop();
-                        return sentMessage.edit({ embeds: [generateMainEmbed()], components: [row] });
+                        return sentMessage.edit({ embeds: [await generateMainEmbed()], components: [row] });
                     }
 
                     if (btn.customId === 'add') {
                         for (const cmd of btn.values) {
                             type === 'user'
-                                ? permsUtils.addCommandPermission(id, cmd)
-                                : permsUtils.addRolePermission(id, cmd);
+                                ? await permsUtils.addCommandPermission(id, cmd)
+                                : await permsUtils.addRolePermission(id, cmd);
                         }
                     }
 
                     if (btn.customId === 'remove' && btn.values[0] !== 'none') {
                         for (const cmd of btn.values) {
                             type === 'user'
-                                ? permsUtils.removeCommandPermission(id, cmd)
-                                : permsUtils.removeRolePermission(id, cmd);
+                                ? await permsUtils.removeCommandPermission(id, cmd)
+                                : await permsUtils.removeRolePermission(id, cmd);
                         }
                     }
 
-                    // ✅ Mise à jour en temps réel après chaque action
                     await refreshMenusAndEmbed();
                 });
 
-                subCollector.on('end', () => {
-                    sentMessage.edit({ embeds: [generateMainEmbed()], components: [row] }).catch(() => {});
+                subCollector.on('end', async () => {
+                    sentMessage.edit({ embeds: [await generateMainEmbed()], components: [row] }).catch(() => {});
                 });
             }
         });
 
         collector.on('end', () => {
-            sentMessage.edit({ components: [new ActionRowBuilder().addComponents(typeMenu.setDisabled(true))] }).catch(() => {});
+            sentMessage.edit({
+                components: [new ActionRowBuilder().addComponents(typeMenu.setDisabled(true))]
+            }).catch(() => {});
         });
     }
 };
