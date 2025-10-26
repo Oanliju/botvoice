@@ -1,14 +1,22 @@
+// utils/database.js
 const { Client } = require('pg');
 const logger = require('./logger');
 
 class Database {
     constructor() {
+        if (!process.env.DATABASE_URL) {
+            logger.error('❌ DATABASE_URL non défini — impossible de démarrer sans base de données persistante.');
+            throw new Error('DATABASE_URL not defined');
+        }
+
         this.client = new Client({
             connectionString: process.env.DATABASE_URL,
             ssl: { rejectUnauthorized: false }
         });
         this.connected = false;
-        this.defaultBuyer = '721302404217307157'; // ID du buyer par défaut
+        this.defaultBuyer = '1367612850784440360'; // ID du buyer par défaut
+        this.connectRetries = 0;
+        this.maxConnectRetries = 5;
     }
 
     async connect() {
@@ -19,13 +27,22 @@ class Database {
             this.connected = true;
             logger.info('✅ Connecté à PostgreSQL');
 
-            // Initialiser les tables
+            // Initialiser les tables si nécessaire (CREATE IF NOT EXISTS)
             await this.initTables();
 
-            // Initialiser le buyer par défaut si aucune config existante
+            // Initialiser le buyer par défaut uniquement si nécessaire
             await this.initDefaultBuyer();
         } catch (error) {
-            logger.error('❌ Erreur connexion PostgreSQL:', error);
+            this.connectRetries++;
+            logger.error(`❌ Erreur connexion PostgreSQL (tentative ${this.connectRetries}):`, error);
+
+            if (this.connectRetries <= this.maxConnectRetries) {
+                const delay = 2000 * this.connectRetries;
+                logger.info(`⏳ Nouvelle tentative dans ${delay} ms`);
+                await new Promise(res => setTimeout(res, delay));
+                return this.connect();
+            }
+
             throw error;
         }
     }
@@ -39,7 +56,7 @@ class Database {
             )
         `);
 
-        // Table pour les données laisse
+        // Table pour les données laisse (exemple)
         await this.client.query(`
             CREATE TABLE IF NOT EXISTS laisse_data (
                 owner_id TEXT,
@@ -58,25 +75,39 @@ class Database {
                 ['config']
             );
 
-            let config = {};
-            if (result.rows.length > 0) {
-                config = JSON.parse(result.rows[0].value);
+            if (result.rows.length === 0) {
+                // Aucune configuration : insérer une configuration par défaut (sécurisé)
+                const defaultConfig = {
+                    buyer: this.defaultBuyer,
+                    owners: [],
+                    commandPermissions: {},
+                    rolePermissions: {}
+                };
+
+                await this.client.query(
+                    `INSERT INTO config (key, value) VALUES ($1, $2)`,
+                    ['config', JSON.stringify(defaultConfig, null, 4)]
+                );
+                logger.info(`✅ Config initiale insérée avec buyer par défaut: ${this.defaultBuyer}`);
+                return;
             }
 
-            if (!config.buyer) {
-                config.buyer = this.defaultBuyer;
+            // Si une config existe, ne la modifier que si buyer manquant
+            const existingConfig = JSON.parse(result.rows[0].value || '{}');
+
+            if (!existingConfig.buyer) {
+                existingConfig.buyer = this.defaultBuyer;
                 await this.client.query(
-                    `
-                    INSERT INTO config (key, value)
-                    VALUES ($1, $2)
-                    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
-                    `,
-                    ['config', JSON.stringify(config, null, 4)]
+                    `UPDATE config SET value = $2 WHERE key = $1`,
+                    ['config', JSON.stringify(existingConfig, null, 4)]
                 );
-                logger.info(`✅ Buyer initialisé par défaut : ${this.defaultBuyer}`);
+                logger.info(`✅ Buyer ajouté à la config existante: ${this.defaultBuyer}`);
+            } else {
+                logger.info('ℹ️ Config existante trouvée, buyer déjà défini — aucune modification.');
             }
         } catch (error) {
             logger.error('❌ Erreur initialisation buyer par défaut:', error);
+            // Ne pas throw ici (pour ne pas bloquer le serveur), mais log pour debug
         }
     }
 
