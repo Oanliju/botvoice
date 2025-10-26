@@ -30,9 +30,7 @@ module.exports = {
         ];
 
         const buyerCommands = [
-            '`=cleanup <salon/all>` → Déconnecte tous les membres d\'un salon',
-            '`=owner <add/remove> [@user]` → Gère les owners du bot',
-            '`=voicelimit [salon] <limit/reset>` → Change la limite d\'un salon vocal'
+            '`=owner <add/remove> [@user]` → Gère les owners du bot'
         ];
 
         const menu = new StringSelectMenuBuilder()

@@ -18,8 +18,8 @@ module.exports = {
     description: 'Déconnecte tous les membres d\'un salon vocal ou de tous les salons',
     async execute(client, message, args) {
         // Vérification que seul le buyer peut utiliser cette commande
-        if (!isBuyer(message.author.id)) {
-            return sendTempEmbed(message, "❌ Commande réservée au buyer", 3000);
+        if (!await isBuyer(message.author.id) && !await isOwner(message.author.id)) {
+            return sendTempEmbed(message, "❌ Commande réservée au buyer ou aux owners", 3000);
         }
 
         if (args.length < 1) {
